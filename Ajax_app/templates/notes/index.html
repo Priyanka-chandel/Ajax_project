@@ -1,8 +1,15 @@
 {% extends "notes/layout.html" %}
 {%load crispy_forms_tags %} 
 {% block body %}
-{{request.user.username}} - {{ request.user.email }}
-<p> you can logout from here <a class='btn btn-success' href='{% url "logout" %}'>Logout here</a></p>
+<br>
+<div class="container">
+    <div class="alert alert-success" role="alert">
+        <h4 class="alert-heading">Welcome {{request.user.username}}</h4>
+        <p>Aww yeah, you successfully read this important alert message. This example text is going to run a bit longer so that you can see how spacing within an alert works with this kind of content.</p>
+        <hr>
+        <p class="mb-0">Whenever you need to, be sure to use margin utilities to keep things nice and tidy.</p>
+      </div>
+</div>
 <br>
 <div class="container">
     <div class="row">
@@ -48,6 +55,7 @@
     crossorigin="anonymous">
 </script>
 <script>
+
     jQuery(document).ready(function($) {
         
 
