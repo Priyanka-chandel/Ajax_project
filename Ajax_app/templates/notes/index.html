@@ -1,0 +1,187 @@
+{% extends "notes/layout.html" %}
+{%load crispy_forms_tags %} 
+{% block body %}
+{{request.user.username}} - {{ request.user.email }}
+<p> you can logout from here <a class='btn btn-success' href='{% url "logout" %}'>Logout here</a></p>
+<br>
+<div class="container">
+    <div class="row">
+        <div class="col-lg-5">
+            <div class="col-10 mx-auto border rounded p-3">
+                <h3 class="pt-3 pb-4">Add Your Notes Here</h3>
+                <p class="text-white" id="message"></p>
+                <form id="noteform">
+                    {% csrf_token %}
+                    {{form|crispy}}
+                    <input type="submit" class="btn btn-success btn-sm p-2 m-3" value="Add Notes" id="add">
+                </form>
+            </div>
+        </div>
+        <div class="col-lg-7 mt-3 mb-3">
+            <table class="table" id="notestable">
+                <thead>
+                    <tr>
+                        <th scope="col">S.No</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Edit</th>
+                        <th scope="col">Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for note in notes %}
+                    <tr>
+                        <th scope="row">{{forloop.counter}}</th>
+                        <td class="title">{{note.title}}</td>
+                        <td class="description">{{note.description}}</td>
+                        <td><button data="{{note.id}}" class="btn btn-primary edit">Edit</button></td>
+                        <td><button data="{{note.id}}" class="btn btn-danger delete">Delete</button></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"
+    integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" 
+    crossorigin="anonymous">
+</script>
+<script>
+    jQuery(document).ready(function($) {
+        
+
+        //edit function
+
+        let activeIteam = null
+
+        //show function
+        function showNote(data){
+            $('#notestable tbody').empty()
+            for (i=0; i < data.length; i++){
+                $('#notestable tbody').append(
+                    `
+                    <tr>
+                        <th scope="row">${i+1}</th>
+                        <td class="title">${data[i].title}</td>
+                        <td class="description">${data[i].description}</td>
+                        <td><button data="${data[i].id}" class="btn btn-primary edit">Edit</button></td>
+                        <td><button data="${data[i].id}" class="btn btn-danger delete">Delete</button></td>
+                    </tr>
+                    `
+                )
+            }
+        }
+        function editIteam(item){
+            var title = item.find('.title').text()
+            var description=item.find('.description').text()
+            var edit_id =item.find('.edit').attr('data')
+            console.log(title,description,edit_id)
+            $('#id_title').val(title)
+            $('#id_description').val(description)
+            $('#add').val('Update Note')
+            $('#add').removeClass('bg-success');
+            $('#add').addClass('bg-danger')
+            activeIteam = edit_id
+        }
+
+        // delete note function
+        function deleteNote(delete_id){
+            $.ajax({
+                type :'GET',
+                url : "{% url "DeleteNote" %}",
+                data : {
+                    "delete_id" : delete_id,
+                },
+                success:function(response){
+                    console.log(response.notes)
+                    showNote(response.notes)
+                    if (response.status_message =="Your Note Deleted Successfully"){
+                        $('#message').text(response.status_message)
+                        $('#message').removeClass('bg-warning')
+                        $('#message').removeClass('bg-success')
+                        $('#message').addClass('bg-danger')
+                    }
+                    $('.delete').click(function(){
+                        var delete_id =$(this).attr('data')
+                        console.log(delete_id)
+                        deleteNote(delete_id)
+                    })
+                    $('.edit').click(function(){
+                        var item=$(this).closest('tr')
+                        editIteam(item)
+                    })
+                    
+                }
+            })
+        }
+
+        //this for form submission
+
+        $('#noteform').on('submit', function(e) {
+            e.preventDefault();
+            var title = $('#id_title').val();
+            var description = $('#id_description').val();
+            url= '{% url "home" %}';
+            data= {
+                title: title,
+                description: description,
+                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+            }
+            if(activeIteam != null){
+                url='{% url "EditNote" %}';
+                data['edit_id'] =activeIteam
+            }
+
+            //ajax call
+            $.ajax({
+                type: 'POST',
+                url: url,
+                data: data,
+                success: function (response) {
+                    console.log(response)
+                    data=response.notes;
+                    $('#noteform').trigger("reset");
+                    if (response.status === "1"){
+                        showNote(data)
+                    }
+                    $('#message').text(response.status_message)
+                    $('#message').removeClass('bg-warning')
+                    $('#message').addClass('bg-success')
+                    $('#message').addClass('p-2')
+                    $('.edit').click(function(){
+                        var item=$(this).closest('tr')
+                        editIteam(item)
+                    })
+                    $('.delete').click(function(){
+                        var delete_id =$(this).attr('data')
+                        console.log(delete_id)
+                        deleteNote(delete_id)
+                    })
+
+                    if (response.status_message === "Your Note Updated Successfully"){
+                        $('#message').text(response.status_message)
+                        $('#message').removeClass('bg-success')
+                        $('#message').removeClass('bg-danger')
+                        $('#message').addClass('bg-warning')
+                        $('#add').val('Add Note')
+                        $('#add').removeClass('bg-danger')
+                        $('#add').addClass('bg-success')
+                        activeIteam =null
+                    }
+                    
+                    }
+            })
+        })
+        $('.edit').click(function(){
+            var item=$(this).closest('tr')
+            editIteam(item)
+        })
+        $('.delete').click(function(){
+            var delete_id =$(this).attr('data')
+            console.log(delete_id)
+            deleteNote(delete_id)
+        })
+    });
+</script>
+{% endblock body %}

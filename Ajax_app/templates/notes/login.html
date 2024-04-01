@@ -1,0 +1,54 @@
+{% extends "notes/layout.html" %}
+{% load static %}
+{%load crispy_forms_tags %} 
+{% block body %}
+<br>
+<br>
+<br>
+    <div class="container col-4 border rounded p-3">
+        <h2 class="p-3">Login Form</h2>
+        <p id="message" class="text-white"></p>
+        <form method="POST" id="loginform">
+            {% csrf_token %}
+            {{ form|crispy }}
+
+            <input type="submit" class="btn btn-success m-2" value="login">
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+    integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" 
+    crossorigin="anonymous">
+</script>
+<script>
+    jQuery(document).ready(function($) {
+        $('#loginform').on('submit', function(e) {
+            e.preventDefault();
+            var username = $('#id_username').val();
+            var password = $('#id_password').val();
+
+            $.ajax({
+                type: 'POST',
+                url: '/login/',
+                data: {
+                    username: username,
+                    password: password,
+                    csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+                },
+                success:function(response){
+                    console.log(response.status);
+                    $('#message').text(response.status)
+                    $('#message').addClass("p-2");
+                    if(response.status =="User login successfull"){
+                        $('#message').addClass('bg-success');
+                        window.location ="{% url "home" %}";
+                    }
+                    else{
+                        $('#message').addClass('bg-danger');
+                    }
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock body %}
